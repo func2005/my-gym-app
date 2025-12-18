@@ -237,9 +237,9 @@ export async function renewMembership(memberId: number, plan: 'MONTH' | 'SEASON'
         revalidatePath("/admin/members")
         revalidatePath("/admin/dashboard") // Revenue changes
         return { success: true, message: "续费成功" }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Renewal error:", error)
-        return { error: "续费失败" }
+        return { error: error.message || "续费失败" }
     }
 }
 

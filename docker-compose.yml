@@ -1,6 +1,6 @@
 services:
-  gym-app:
-    container_name: gym-app
+  gym-lite:
+    container_name: gym-lite
     build:
       context: .
       dockerfile: Dockerfile

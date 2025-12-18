@@ -10,7 +10,8 @@ export default async function MemberDashboard() {
     }
 
     const { member, daysRemaining, checkInDates, stats, body } = data
-    const todayStr = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+    const now = new Date()
+    const todayStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
 
     const daysGradient = daysRemaining < 30 ? "from-orange-500 to-red-600" : "from-indigo-600 to-purple-700"
 
@@ -46,7 +47,10 @@ export default async function MemberDashboard() {
                         </div>
                     </div>
                     <p className="mt-6 text-xs opacity-60 font-mono">
-                        到期日: {new Date(member.expiryDate).toLocaleDateString('zh-CN')}
+                        到期日: {(() => {
+                            const d = new Date(member.expiryDate)
+                            return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
+                        })()}
                     </p>
                 </div>
                 {/* Decorative circles */}
@@ -55,7 +59,7 @@ export default async function MemberDashboard() {
             </div>
 
             {/* Check-in Calendar with Stats */}
-            <CheckInCalendar dates={checkInDates} stats={stats} />
+            <CheckInCalendar dates={checkInDates} stats={stats} referenceDate={new Date()} />
 
             {/* Body Status Card */}
             <div className="flex gap-4">

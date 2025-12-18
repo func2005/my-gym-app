@@ -1,6 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react"
 
 interface CheckInCalendarProps {
     dates: number[]
@@ -9,10 +10,24 @@ interface CheckInCalendarProps {
         thisWeek: number
         weeklyAvg: string
     }
+    referenceDate?: Date
 }
 
-export function CheckInCalendar({ dates, stats }: CheckInCalendarProps) {
-    const today = new Date()
+export function CheckInCalendar({ dates, stats, referenceDate }: CheckInCalendarProps) {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    // Use passed date (Server Time) or fallback to new Date() (Client Time) to ensure consistency during hydration
+    const today = referenceDate || new Date()
+
+    // Prevent hydration mismatch by defining initial render content or waiting for mount
+    // For a calendar dependent on "Today", waiting for mount ensures the client timezone is used consistently without mismatch error.
+    if (!mounted) {
+        return <div className="h-64 bg-white/50 animate-pulse rounded-xl"></div>
+    }
     const currentMonth = today.getMonth()
     const currentYear = today.getFullYear()
 

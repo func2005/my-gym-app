@@ -51,7 +51,7 @@ export async function createSession(id: number, role: 'member' | 'admin', identi
 
         ; (await cookies()).set('session', session, {
             httpOnly: true,
-            secure: true,
+            secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE === 'true',
             expires: expiresAt,
             sameSite: 'lax',
             path: '/',
