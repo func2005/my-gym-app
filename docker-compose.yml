@@ -1,0 +1,23 @@
+services:
+  gym-app:
+    container_name: gym-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount the prisma directory to persist SQLite database
+      # Schema expects database at ./prisma/dev.db (relative to schema file)
+      - ./prisma:/app/prisma
+    environment:
+      - NODE_ENV=production
+      - SESSION_SECRET=change-this-secret-key-in-production
+      # - DATABASE_URL=file:./dev.db # Not needed unless schema uses env()
+      # Optional: Healthcheck
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3

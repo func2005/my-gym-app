@@ -1,0 +1,134 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+// ==============================
+// 1. Identity Domain (身份域)
+// ==============================
+
+model Member {
+  id         Int      @id @default(autoincrement())
+  phone      String   @unique
+  password   String   // BCrypt hash
+  name       String
+  avatar     String?
+  
+  // 状态管理
+  // Enum emulation: "ACTIVE", "BANNED", "EXPIRED"
+  status     String   @default("ACTIVE") 
+  startDate  DateTime @default(now())
+  expiryDate DateTime // 核心：鉴权依据
+  
+  // 简单备注 (用于记录非结构化的续费历史或特殊情况)
+  notes      String?
+
+  // 审计与安全
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deleted    Boolean  @default(false) // 软删除
+
+  // 关联
+  checkIns    CheckIn[]
+  bodyMetrics BodyMetric[]
+  workoutLogs WorkoutLog[]
+  paymentLogs PaymentLog[]
+  
+  @@index([phone]) // 登录查询加速
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  // Enum emulation: "SUPER_ADMIN", "STAFF"
+  role      String   @default("STAFF")
+  
+  createdAt DateTime @default(now())
+}
+
+// ==============================
+// 2. Business Domain (业务域)
+// ==============================
+
+model BodyMetric {
+  id         Int      @id @default(autoincrement())
+  memberId   Int
+  recordDate DateTime @default(now())
+  
+  weight     Float?
+  height     Float?   // cm
+  bodyFat    Float?
+  muscle     Float?
+  waist      Float?
+  
+  // 优化：使用 Json 类型，Prisma Client 自动处理序列化
+  // 格式示例: ["https://oss.../1.jpg", "https://oss.../2.jpg"]
+  photos     String?    
+  
+  deleted    Boolean  @default(false)
+
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  @@index([memberId, recordDate]) // 个人数据看板查询
+}
+
+model WorkoutLog {
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  date      DateTime @default(now())
+  
+  title     String
+  duration  Int?     // 分钟
+  intensity Int?     // 1-5
+  notes     String?
+  
+  deleted   Boolean  @default(false)
+
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId, date]) // 训练日志查询
+}
+
+// ==============================
+// 3. Operation Domain (运营域)
+// ==============================
+
+// 签到表
+model CheckIn {
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  checkTime DateTime @default(now())
+
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  @@index([checkTime]) // 流量统计
+}
+
+// 支付与续费流水表
+model PaymentLog {
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  createdAt DateTime @default(now()) // 交易时间
+  
+  amount    Float    // 交易金额 (例如: 1200.00)
+  days      Int?     // 延期天数 (例如: 365)，如果是单纯购买商品可为空
+  
+  // 交易类型与方式
+  // Enum emulation: "RENEWAL" (续费), "REFUND" (退款), "PURCHASE" (杂项购买)
+  type      String   @default("RENEWAL") 
+  // Enum emulation: "WECHAT", "ALIPAY", "CASH", "OTHER"
+  method    String?  
+  
+  notes     String?  // 备注 (如: "双十一活动优惠")
+
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId]) // 查某人的账单
+  @@index([createdAt]) // 查某月的财务
+}
