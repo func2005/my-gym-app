@@ -54,8 +54,7 @@ export async function addBodyMetric(prevState: any, formData: FormData) {
         orderBy: { recordDate: 'desc' }
     })
 
-    console.log("AddMetric: Received", { weight, height, waist, bodyFat })
-    console.log("AddMetric: Update Existing?", existingRecord?.id)
+
 
     try {
         if (existingRecord) {
